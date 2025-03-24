@@ -56,9 +56,11 @@ positions_equity = (
 shocks = [-5, -2, -1, 0, 1, 2, 5]
 perfiles_individuales, perfil_total = portfolio_profile(positions_equity, shocks=shocks)
 
+spx_ticker = yf.Ticker("^GSPC")
+last_price_spx = float(spx_ticker.history(period="1d")["Close"].iloc[-1])
 
 # Graficar los perfiles
-plot_portfolio_profiles(perfiles_individuales, perfil_total, shocks=shocks)
+plot_portfolio_profiles(perfiles_individuales, perfil_total, last_price_spx, shocks=shocks)
 
 variations_table = generate_variation_table(perfil_total, shocks=shocks)
 print(variations_table)
