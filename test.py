@@ -12,24 +12,25 @@ currencies = ["USD", "EUR"]
 fx_exchange = currency_to_eur(currencies)
 
 positions = pd.concat([positions_quintet, positions_ibkr], ignore_index=True)
-positions["Symbol"].replace("HEIA", "HEIA.AS", inplace=True)
+positions["UnderlyingSymbol"].replace("HEIA", "HEIA.AS", inplace=True)
+positions["UnderlyingSymbol"].replace("MES", "ES=F", inplace=True)
 # Añadir Market Price ultimo
-positions_equity = positions[positions.AssetClass == "STK"]
+positions_equity = positions[(positions.AssetClass == "STK") | (positions.AssetClass == "FUT")]
 positions_equity = fill_market_price(positions_equity)
 
 # Añadir beta al portfolio
 betas = pd.read_csv("input/betas.csv")
-if valores_contenidos(positions_equity, "Symbol", betas, "Symbol"):
-    positions_equity = positions_equity.merge(betas, on="Symbol", how="left")
+if valores_contenidos(positions_equity, "UnderlyingSymbol", betas, "UnderlyingSymbol"):
+    positions_equity = positions_equity.merge(betas, on="UnderlyingSymbol", how="left")
 else:
     # Calculo betas porque faltan algunas y guardo archivo
     inicio = "2020-01-01"  # Fecha de inicio
     fin = "2025-01-01"  # Fecha de fin
 
-    betas = calcular_beta_cov_var(list(positions_equity.Symbol.unique()), inicio, fin)
+    betas = calcular_beta_cov_var(list(positions_equity.UnderlyingSymbol.unique()), inicio, fin)
     # betas['Symbol'].replace('HEIA.AS','HEIA', inplace=True)
     betas.to_csv("input/betas.csv", index=False)
-    positions_equity = positions_equity.merge(betas, on="Symbol", how="left")
+    positions_equity = positions_equity.merge(betas, on="UnderlyingSymbol", how="left")
 # Añadir fx al portfolio
 positions_equity = positions_equity.merge(fx_exchange, on="CurrencyPrimary", how="left")
 
@@ -46,6 +47,7 @@ positions_equity = (
             "Multiplier": "first",
             "FX_Exchange": "first",
             "Beta": "first",
+            "UnderlyingSymbol":"first",
         }
     )
     .reset_index()

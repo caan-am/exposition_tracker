@@ -19,7 +19,7 @@ def equity_profile(current_price, num_shares, fx_exchange, beta_sp500, shocks=No
     if shocks is None:
         shocks = np.linspace(-5, 5, 50)  # Porcentajes de cambio en el SP500
 
-    # To-do transform currency
+    
     shocks = np.array(shocks) / 100  # Convertir a proporciones
     value_change = shocks * beta_sp500  # Cambio en la acción
     current_valuation = current_price * num_shares * fx_exchange
@@ -34,8 +34,30 @@ def option_profile(current_price, beta_sp500, shocks=None):
     return None
 
 
-def futures_profile(current_price, beta_sp500, shocks=None):
-    return None
+def futures_profile(current_price, num_shares, fx_exchange, beta_sp500, multiplier, shocks=None):
+    """
+    Calcula el perfil de un futuro en función de cambios en el SP500.
+
+    Parámetros:
+    - precio_actual: Precio actual de la acción.
+    - beta_sp500: Beta de la acción con respecto al SP500.
+    - shocks_sp500: Lista de variaciones porcentuales en el SP500 (ej. [-5, -2, 0, 2, 5]).
+
+    Retorna:
+    - Diccionario con los precios simulados de la acción en función del SP500.
+    """
+    if shocks is None:
+        shocks = np.linspace(-5, 5, 50)  # Porcentajes de cambio en el SP500
+
+    
+    shocks = np.array(shocks) / 100  # Convertir a proporciones
+    value_change = shocks * beta_sp500  # Cambio en la acción
+    current_valuation = current_price * num_shares * fx_exchange * multiplier
+    simulated_valuation = current_valuation * (1 + value_change)
+    simulated_variaton = simulated_valuation - current_valuation
+
+    # variation in eur
+    return simulated_variaton
 
 
 def portfolio_profile(portfolio, shocks=None):
@@ -80,10 +102,9 @@ def portfolio_profile(portfolio, shocks=None):
             )
         elif instrument == "opcion":
             simulated_variaton = option_profile(current_price, beta_sp500, shocks * 100)
-        elif instrument == "futuro":
+        elif instrument == "FUT":
             simulated_variaton = futures_profile(
-                current_price, beta_sp500, shocks * 100
-            )
+                current_price, quantity, fx_exchange, beta_sp500, multiplier, shocks * 100)
         else:
             raise ValueError(f"Producto {instrument} no reconocido.")
 

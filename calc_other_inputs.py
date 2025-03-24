@@ -33,7 +33,7 @@ def calcular_beta_cov_var(tickers, inicio, fin):
         beta = covarianza / varianza
 
         # Añadir el resultado al listado de betas
-        betas.append({"Symbol": ticker, "Beta": beta})
+        betas.append({"UnderlyingSymbol": ticker, "Beta": beta})
 
     # Convertir la lista de diccionarios a un DataFrame
     betas_df = pd.DataFrame(betas)
@@ -81,7 +81,7 @@ def fill_market_price(df):
     df = df.copy()  # Evitar modificar el original
 
     for index, row in df.iterrows():
-        ticker = row["Symbol"]
+        ticker = row["UnderlyingSymbol"]
 
         try:
             # Obtener el último precio desde Yahoo Finance
