@@ -1,6 +1,7 @@
 import yfinance as yf
 import pandas as pd
 import numpy as np
+from utils import *
 
 
 def calcular_beta_cov_var(tickers, inicio, fin):
@@ -40,6 +41,21 @@ def calcular_beta_cov_var(tickers, inicio, fin):
 
     return betas_df
 
+def add_beta_to_portfolio(positions, betas):
+    if valores_contenidos(positions, "UnderlyingSymbol", betas, "UnderlyingSymbol"):
+        positions = positions.merge(betas, on="UnderlyingSymbol", how="left")
+        return positions
+    else:
+        # Calculo betas porque faltan algunas y guardo archivo
+        inicio = "2020-01-01"  # Fecha de inicio
+        fin = "2025-01-01"  # Fecha de fin
+
+        betas = calcular_beta_cov_var(list(positions.UnderlyingSymbol.unique()), inicio, fin)
+        # betas['Symbol'].replace('HEIA.AS','HEIA', inplace=True)
+        betas.to_csv("input/betas.csv", index=False)
+        positions = positions.merge(betas, on="UnderlyingSymbol", how="left")
+        return positions
+   
 
 def currency_to_eur(currencies):
     """
