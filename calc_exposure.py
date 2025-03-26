@@ -54,8 +54,10 @@ def portfolio_exposure(portfolio):
         # Llamar a la función correspondiente dependiendo del tipo de producto
         if instrument == "STK":
             exposure = calc_equity_exposure(current_price, quantity, fx_exchange, beta_sp500)
-        elif ((instrument == "OPT") | (instrument == "FOP")):
+        elif (instrument == "OPT"):
             exposure = calc_option_exposure(current_price, quantity, delta, fx_exchange,  beta_sp500,  multiplier)
+        elif instrument == "FOP":
+            exposure = calc_future_exposure(current_price*delta, quantity, fx_exchange, beta_sp500, multiplier)
         elif instrument == "FUT":
             exposure = calc_future_exposure(current_price, quantity, fx_exchange, beta_sp500, multiplier)
         else:

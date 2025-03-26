@@ -15,7 +15,7 @@ positions["UnderlyingSymbol"].replace("BRK B", "BRK-B", inplace=True)
 positions["UnderlyingSymbol"].replace("MES", "ES=F", inplace=True)
 positions["UnderlyingSymbol"].replace("ESM5", "ES=F", inplace=True)
 positions["UnderlyingSymbol"].replace("MC", "MC.PA", inplace=True)
-
+positions["UnderlyingSymbol"].replace("SOI", "SOI.PA", inplace=True)
 # Juntar posiciones deL mismo producto 
 positions = (
     positions.groupby(by=["Description"])
@@ -63,7 +63,8 @@ dict_deltas_temporal = {'ALPHABET INC-CL A': None,
                         'NVO 28MAR25 73 P': -0.22, 
                         'PAYPAL HOLDINGS INC': None, 
                         'VET 20JUN25 10 P': -0.809,
-                        'HEIA 28MAR25 74 P': -0.155}
+                        'HEIA 28MAR25 74 P': -0.155,
+                        'SOI 17APR25 57 P': -0.531}
 
 deltas_temp = pd.DataFrame(list(dict_deltas_temporal.items()), columns=['Description', 'Delta'])
 positions = positions.merge(deltas_temp, on="Description", how="left")
