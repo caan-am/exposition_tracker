@@ -48,24 +48,24 @@ positions = positions.merge(fx_exchange, on="CurrencyPrimary", how="left")
 # Añadir deltas To-do. Hacer función fill_deltas
 dict_deltas_temporal = {'ALPHABET INC-CL A': None,
                         'AMAZON.COM INC': None, 
-                        'BRK B 28MAR25 515 P': -0.034, 
+                        'BRK B 28MAR25 515 P': -0.038, 
                         'CORE NATURAL RESOURCES INC': None, 
                         'CRESUD S.A.-SPONS ADR': None, 
-                        'ES 17APR25 5480 P': -0.126,
-                        'ES 17APR25 5670 P': -0.297,
-                        'GOOGL 28MAR25 157.5 P': -0.032, 
+                        'ES 17APR25 5480 P': -0.153,
+                        'ES 17APR25 5670 P': -0.346,
+                        'GOOGL 28MAR25 157.5 P': -0.041, 
                         'HEINEKEN NV': None,
                         'HOWARD HUGHES HOLDINGS INC': None,
                         'INTEL CORP': None, 
                         'LVMH MOET HENNESSY LOUIS VUI': None,
                         'MES 20JUN25': None, 
-                        'MSFT 28MAR25 375 P': -0.033, 
+                        'MSFT 28MAR25 375 P': -0.036, 
                         'NOVO-NORDISK A/S-SPONS ADR': None, 
-                        'NVO 28MAR25 73 P': -0.575, 
+                        'NVO 28MAR25 73 P': -0.614, 
                         'PAYPAL HOLDINGS INC': None, 
-                        'VET 20JUN25 10 P': -0.823,
-                        'HEIA 28MAR25 74 P': -0.313,
-                        'SOI 17APR25 57 P': -0.568}
+                        'VET 20JUN25 10 P': -0.836,
+                        'HEIA 28MAR25 74 P': -0.304,
+                        'SOI 17APR25 57 P': -0.593}
 
 deltas_temp = pd.DataFrame(list(dict_deltas_temporal.items()), columns=['Description', 'Delta'])
 positions = positions.merge(deltas_temp, on="Description", how="left")
