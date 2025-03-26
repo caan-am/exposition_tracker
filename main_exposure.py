@@ -74,6 +74,22 @@ positions = positions.merge(deltas_temp, on="Description", how="left")
 
 individual_exposures, total_exposure = portfolio_exposure(positions)
 
+# Exposición en términos de MES
+data = yf.Ticker("ES=F")
+current_price_fut = data.history(period="1d")["Close"].iloc[-1]
+beta = float(betas[betas["UnderlyingSymbol"] == "ES=F"]["Beta"])
+fx_exchange = float(fx_exchange[fx_exchange["CurrencyPrimary"] == "USD"]["FX_Exchange"])
+MES_exposure =  current_price_fut * fx_exchange * 5 * beta
 
+# % Long and short
+total_absolute_exposure = individual_exposures["Exposure"].abs().sum()
+grouped_by_direction = individual_exposures.groupby(by="Direction").sum().reset_index()
+long_absolute = float(abs(grouped_by_direction[grouped_by_direction.Direction == "Long"]["Exposure"]))
+short_absolute = float(abs(grouped_by_direction[grouped_by_direction.Direction == "Short"]["Exposure"]))
+pct_short = 100* short_absolute/total_absolute_exposure
+pct_long = 100* long_absolute/total_absolute_exposure
 
-print("Hello")
+print("Total exposure: " + str(total_exposure) + " EUR")
+print("Total exposure in MES: " + str(total_exposure/float(MES_exposure)) + " MES")
+print("Position short: " + str(pct_short) + " %")
+print("Position long: " + str(pct_long) + " %")
