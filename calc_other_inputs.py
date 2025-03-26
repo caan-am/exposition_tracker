@@ -111,12 +111,3 @@ def fill_market_price(df):
 
     return df
 
-
-# #TO-DO sustituir con IBKR para poder hacer esto automatico y no a mano
-# tickers = ['HEIA.AS', 'MC', 'AMZN', 'CNR', 'HHH', 'INTC', 'NVO', 'CRESY']  # Tickers de las acciones que deseas analizar
-# inicio = '2020-01-01'  # Fecha de inicio
-# fin = '2025-01-01'  # Fecha de fin
-
-# betas = calcular_beta_cov_var(tickers, inicio, fin)
-# betas['Symbol'].replace('HEIA.AS','HEIA', inplace=True)
-# betas.to_csv("input/betas.csv", index=False)
