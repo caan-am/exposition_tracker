@@ -1,8 +1,7 @@
 import tkinter as tk
 from tkinter import ttk
 import pandas as pd
-import yfinance as yf  # Si no lo has importado, asegúrate de que esté disponible
-import pandas as pd
+import yfinance as yf
 from calc_exposure import *
 from calc_other_inputs import *
 from get_portfolio import *
@@ -74,8 +73,7 @@ deltas_temp = pd.DataFrame(list({
 }.items()), columns=['Description', 'Delta'])
 positions = positions.merge(deltas_temp, on="Description", how="left")
 
-
-# Función para calcular exposición (usando tu código)
+# Función para calcular exposición
 def calculate_exposure():
     global fx_exchange  # Declarar fx_exchange como global si necesitas usarla dentro de la función
     # Aquí va tu lógica para calcular la exposición
@@ -98,11 +96,17 @@ def calculate_exposure():
     pct_short = 100 * short_absolute / total_absolute_exposure
     pct_long = 100 * long_absolute / total_absolute_exposure
 
+    # Formatear los resultados en EUR y con dos decimales
+    total_exposure_formatted = "{:,.2f}".format(total_exposure).replace(",", "X").replace(".", ",").replace("X", ".")
+    MES_exposure_formatted = "{:,.2f}".format(total_exposure / float(MES_exposure)).replace(",", "X").replace(".", ",").replace("X", ".")
+    pct_short_formatted = "{:.2f}".format(pct_short).replace(".", ",")
+    pct_long_formatted = "{:.2f}".format(pct_long).replace(".", ",")
+
     # Mostrar los resultados en el cuadro de texto
-    results_text.set(f"Total exposure: {total_exposure} EUR\n"
-                     f"Total exposure in MES: {total_exposure / float(MES_exposure)} MES\n"
-                     f"Position short: {pct_short} %\n"
-                     f"Position long: {pct_long} %")
+    results_text.set(f"Total exposure: {total_exposure_formatted} EUR\n"
+                     f"Total exposure in MES: {MES_exposure_formatted} MES\n"
+                     f"Position short: {pct_short_formatted} %\n"
+                     f"Position long: {pct_long_formatted} %")
 
 
 # Crear la ventana principal
@@ -117,16 +121,44 @@ tree.heading('Description', text='Descripción')
 tree.heading('Symbol', text='Símbolo')
 tree.heading('Currency', text='Moneda')
 tree.heading('Quantity', text='Cantidad')
-tree.heading('MarkPrice', text='Precio del subyacente')
+tree.heading('MarkPrice', text='Precio de Mercado')
 tree.heading('Multiplier', text='Multiplicador')
 tree.heading('Beta', text='Beta')
 tree.heading('Delta', text='Delta')
 
-# Insertar los datos de las posiciones en la tabla
-for _, row in positions.iterrows():
-    # Asegúrate de insertar los valores correctos en cada columna
-    tree.insert('', 'end', values=(row['Description'], row['Symbol'], row['CurrencyPrimary'], row['Quantity'],
-                                   row['MarkPrice'], row['Multiplier'], row['Beta'], row['Delta']))
+# Función para agregar las posiciones bajo sus respectivos títulos
+def insert_positions_by_asset_class():
+    asset_classes = ['FOP', 'OPT', 'FUT', 'STK']
+    asset_class_titles = {
+        'FOP': "Opciones sobre futuros",
+        'OPT': "Opciones",
+        'FUT': "Futuros",
+        'STK': "Acciones"
+    }
+
+    # Insertar títulos para cada clase de activo y luego sus posiciones
+    for asset_class in asset_classes:
+        # Insertar título con estilo personalizado (negrita)
+        tree.insert('', 'end', values=(asset_class_titles[asset_class], '', '', '', '', '', '', ''), tags=(asset_class,))
+        
+        # Insertar las posiciones debajo del título
+        for _, row in positions[positions['AssetClass'] == asset_class].iterrows():
+            tree.insert('', 'end', values=(row['Description'], row['Symbol'], row['CurrencyPrimary'], row['Quantity'],
+                                           row['MarkPrice'], row['Multiplier'], row['Beta'], row['Delta']), tags=(asset_class,))
+
+# Llamar a la función para insertar las posiciones en la tabla
+insert_positions_by_asset_class()
+
+# Estilo para las filas con títulos (en negrita)
+style = ttk.Style()
+style.configure('TTreeview', font=('Helvetica', 10))
+style.configure('TTreeview.Heading', font=('Helvetica', 12, 'bold'))  # Encabezados más grandes y en negrita
+
+# Aplicar negrita solo a las filas de título de AssetClass
+tree.tag_configure('FOP', font=('Helvetica', 12, 'bold'))
+tree.tag_configure('OPT', font=('Helvetica', 12, 'bold'))
+tree.tag_configure('FUT', font=('Helvetica', 12, 'bold'))
+tree.tag_configure('STK', font=('Helvetica', 12, 'bold'))
 
 tree.pack(padx=10, pady=10)
 
