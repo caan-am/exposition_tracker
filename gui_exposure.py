@@ -74,9 +74,13 @@ deltas_temp = pd.DataFrame(list({
 
 positions = positions.merge(deltas_temp, on="Description", how="left")
 
-# Función para calcular exposición
+# Función para calcular exposición y actualizar la tabla
 def calculate_exposure():
     global fx_exchange
+    global positions
+
+    # Actualizar precios de mercado
+    positions = fill_market_price(positions)
     individual_exposures, total_exposure = portfolio_exposure(positions)
 
     # Precio actual del MES
@@ -101,10 +105,42 @@ def calculate_exposure():
                      f"Position short: {pct_short:,.2f} %\n"
                      f"Position long: {pct_long:,.2f} %")
 
+    # **Actualizar la tabla con los nuevos precios de mercado**
+    update_positions_table()
+
+# Función para actualizar la tabla con los nuevos datos
+def update_positions_table():
+    # Vaciar la tabla
+    tree.delete(*tree.get_children())
+
+    # Volver a insertar los datos con los nuevos precios de mercado
+    insert_positions_by_asset_class()
+
+# Función para insertar datos diferenciando AssetClass
+def insert_positions_by_asset_class():
+    asset_class_titles = {
+        'FOP': "Opciones sobre futuros",
+        'OPT': "Opciones",
+        'FUT': "Futuros",
+        'STK': "Acciones"
+    }
+
+    for asset_class, title in asset_class_titles.items():
+        tree.insert('', 'end', values=(title, '', '', '', '', '', '', ''), tags=("title",))
+
+        for _, row in positions[positions['AssetClass'] == asset_class].iterrows():
+            tree.insert('', 'end', values=(row['Description'], row['Symbol'], row['CurrencyPrimary'], 
+                                           f"{row['Quantity']:.2f}", 
+                                           f"{row['MarkPrice']:.2f}",  # Aquí ya estará actualizado
+                                           f"{row['Multiplier']:.2f}" if pd.notna(row['Multiplier']) else '', 
+                                           f"{row['Beta']:.2f}" if pd.notna(row['Beta']) else '',
+                                           f"{row['Delta']:.3f}" if pd.notna(row['Delta']) else ''), 
+                        tags=("normal",))
+
 # Crear ventana principal
 root = tk.Tk()
 root.title("Cálculo de Exposición del Portfolio")
-root.geometry("900x600")  # Ajusta el tamaño inicial de la ventana
+root.geometry("1000x600")  # Ajustar el tamaño para mostrar más posiciones
 
 # Crear frame principal
 frame = tk.Frame(root)
@@ -127,27 +163,7 @@ tree.heading('Delta', text='Delta')
 for col in ('Description', 'Symbol', 'Currency', 'Quantity', 'MarkPrice', 'Multiplier', 'Beta', 'Delta'):
     tree.column(col, anchor="center", stretch=True)
 
-# Función para insertar datos diferenciando AssetClass
-def insert_positions_by_asset_class():
-    asset_class_titles = {
-        'FOP': "Opciones sobre futuros",
-        'OPT': "Opciones",
-        'FUT': "Futuros",
-        'STK': "Acciones"
-    }
-
-    for asset_class, title in asset_class_titles.items():
-        tree.insert('', 'end', values=(title, '', '', '', '', '', '', ''), tags=("title",))
-
-        for _, row in positions[positions['AssetClass'] == asset_class].iterrows():
-            tree.insert('', 'end', values=(row['Description'], row['Symbol'], row['CurrencyPrimary'], 
-                                           f"{row['Quantity']:.2f}", 
-                                           f"{row['MarkPrice']:.2f}", 
-                                           f"{row['Multiplier']:.2f}" if pd.notna(row['Multiplier']) else '', 
-                                           f"{row['Beta']:.2f}" if pd.notna(row['Beta']) else '',
-                                           f"{row['Delta']:.3f}" if pd.notna(row['Delta']) else ''), 
-                        tags=("normal",))
-
+# Insertar posiciones al inicio
 insert_positions_by_asset_class()
 
 # Configurar estilos
