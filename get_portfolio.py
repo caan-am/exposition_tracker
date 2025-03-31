@@ -133,11 +133,23 @@ def download_activity_query():
 
 
 def get_current_portfolio():
+    # Obtener la fecha de hoy
+    todays_date = datetime.today().date()
     #Transacciones tiene todo, órdenes tienes asignaciones y eso...
     daily_trades = download_flex_query()
     trades_today = daily_trades[daily_trades.LevelOfDetail == "ORDER"]
+    # Quito los trades que no son de hoy
+    trades_today['TradeDate'] = pd.to_datetime(trades_today['TradeDate'].dropna().astype(int).astype(str), format='%Y%m%d')
+    trades_today = trades_today[(trades_today['TradeDate'].isna()) | 
+                                (trades_today['TradeDate'].dt.date == todays_date)]
     transactions, positions, orders = download_activity_query()
+    # Quito las positions caducadas
+    positions['Expiry'] = pd.to_datetime(positions['Expiry'].dropna().astype(int).astype(str), format='%Y%m%d')
+    
+    # Filtrar el DataFrame
+    positions = positions[(positions['Expiry'].isna()) | (positions['Expiry'].dt.date >= todays_date)]
     current_positions = pd.concat([positions,trades_today])
+    # To-do: quitar las posiciones caducadas, ocurre los viernes
     current_positions = (
     current_positions.groupby(by=["Description"])
     .agg(
