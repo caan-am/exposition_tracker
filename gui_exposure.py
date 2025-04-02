@@ -6,96 +6,56 @@ from calc_exposure import *
 from calc_other_inputs import *
 from get_portfolio import *
 
-# Cargar datos del portfolio
+# === Datos base ===
 positions = get_current_portfolio()
 positions_quintet = pd.read_excel("input/positions_quintet.xlsx")
 positions = pd.concat([positions_quintet, positions], ignore_index=True)
 
-# Reemplazos de símbolos
 positions["UnderlyingSymbol"].replace({
-    "HEIA": "HEIA.AS",
-    "BRK B": "BRK-B",
-    "MES": "ES=F",
-    "ESM5": "ES=F",
-    "MC": "MC.PA",
-    "SOI": "SOI.PA",
+    "HEIA": "HEIA.AS", "BRK B": "BRK-B", "MES": "ES=F", "ESM5": "ES=F", "MC": "MC.PA", "SOI": "SOI.PA",
 }, inplace=True)
 
-# Agrupar posiciones
-positions = (
-    positions.groupby(by=["Description"])
-    .agg({
-        "Symbol": "first",
-        "CurrencyPrimary": "first",
-        "AssetClass": "first",
-        "Quantity": "sum",
-        "MarkPrice": "first",
-        "Multiplier": "first",
-        "UnderlyingSymbol": "first",
-    })
-    .reset_index()
-)
+positions = positions.groupby("Description").agg({
+    "Symbol": "first", "CurrencyPrimary": "first", "AssetClass": "first", "Quantity": "sum",
+    "MarkPrice": "first", "Multiplier": "first", "UnderlyingSymbol": "first"
+}).reset_index()
 
-# Añadir precio de mercado
 positions = fill_market_price(positions)
-
-# Añadir Beta
 betas = pd.read_csv("input/betas.csv")
 positions = add_beta_to_portfolio(positions, betas)
-
-# Tipo de cambio
-currencies = ["USD", "EUR"]
-fx_exchange = currency_to_eur(currencies)
+fx_exchange = currency_to_eur(["USD", "EUR"])
 positions = positions.merge(fx_exchange, on="CurrencyPrimary", how="left")
 
-# Añadir columna Include para checkboxes
 positions["Include"] = True
+positions["ModifiedQuantity"] = positions["Quantity"]
 
-# Añadir deltas
 deltas_temp = pd.DataFrame(list({
-    'ALPHABET INC-CL A': None,
-    'AMAZON.COM INC': None, 
-    'CORE NATURAL RESOURCES INC': None, 
-    'CRESUD S.A.-SPONS ADR': None, 
-    'ES 17APR25 5480 P': -0.252,
-    'ES 17APR25 5670 P': -0.509,
-    'HEINEKEN NV': None,
-    'HOWARD HUGHES HOLDINGS INC': None,
-    'INTEL CORP': None, 
-    'LVMH MOET HENNESSY LOUIS VUI': None,
-    'MES 20JUN25': None, 
-    'NOVO-NORDISK A/S-SPONS ADR': None, 
-    'PAYPAL HOLDINGS INC': None, 
-    'VET 20JUN25 10 P': -0.887,
-    'HEIA 04APR25 74 P': -0.337,
-    'SOI 17APR25 57 P': -0.900,
-    'YPF 17APR25 37 P': -0.618,
-    'GLNG 17APR25 34 P': -0.215,
+    'ALPHABET INC-CL A': None, 'AMAZON.COM INC': None, 'CORE NATURAL RESOURCES INC': None,
+    'CRESUD S.A.-SPONS ADR': None, 'ES 17APR25 5480 P': -0.252, 'ES 17APR25 5670 P': -0.509,
+    'HEINEKEN NV': None, 'HOWARD HUGHES HOLDINGS INC': None, 'INTEL CORP': None,
+    'LVMH MOET HENNESSY LOUIS VUI': None, 'MES 20JUN25': None, 'NOVO-NORDISK A/S-SPONS ADR': None,
+    'PAYPAL HOLDINGS INC': None, 'VET 20JUN25 10 P': -0.887, 'HEIA 04APR25 74 P': -0.337,
+    'SOI 17APR25 57 P': -0.900, 'YPF 17APR25 37 P': -0.618, 'GLNG 17APR25 34 P': -0.215,
 }.items()), columns=['Description', 'Delta'])
-
 positions = positions.merge(deltas_temp, on="Description", how="left")
 
-# === Crear ventana principal ===
+# === GUI ===
 root = tk.Tk()
 root.title("Cálculo de Exposición del Portfolio")
-root.geometry("1100x600")
+root.geometry("1200x650")
 
-# === Cargar imágenes para checkboxes ===
 check_on = tk.PhotoImage(file="input/checkbox_checked.png")
 check_off = tk.PhotoImage(file="input/checkbox_unchecked.png")
 
-# === Crear el frame principal ===
 frame = tk.Frame(root)
 frame.pack(expand=True, fill="both", padx=10, pady=10)
 
-# === Crear el Treeview ===
 tree = ttk.Treeview(
     frame,
-    columns=('Description', 'Symbol', 'Currency', 'Quantity', 'MarkPrice', 'Multiplier', 'Beta', 'Delta'),
-    show="tree headings"  # Mostrar columna árbol + encabezados
+    columns=('Description', 'Symbol', 'Currency', 'Quantity', 'ModifiedQuantity', 'MarkPrice', 'Multiplier', 'Beta', 'Delta'),
+    show="tree headings"
 )
 
-# Encabezados
 tree.heading('#0', text='Incluir')
 tree.column('#0', width=70, anchor='center')
 
@@ -103,16 +63,15 @@ tree.heading('Description', text='Descripción')
 tree.heading('Symbol', text='Símbolo')
 tree.heading('Currency', text='Moneda')
 tree.heading('Quantity', text='Cantidad')
+tree.heading('ModifiedQuantity', text='Cantidad Modificada')
 tree.heading('MarkPrice', text='Precio de Mercado')
 tree.heading('Multiplier', text='Multiplicador')
 tree.heading('Beta', text='Beta')
 tree.heading('Delta', text='Delta')
 
-# Configurar columnas
-for col in ('Description', 'Symbol', 'Currency', 'Quantity', 'MarkPrice', 'Multiplier', 'Beta', 'Delta'):
+for col in ('Description', 'Symbol', 'Currency', 'Quantity', 'ModifiedQuantity', 'MarkPrice', 'Multiplier', 'Beta', 'Delta'):
     tree.column(col, anchor="center", stretch=True)
 
-# Estilos
 style = ttk.Style()
 style.configure('TTreeview', font=('Helvetica', 10))
 style.configure('TTreeview.Heading', font=('Helvetica', 12, 'bold'))
@@ -121,33 +80,34 @@ tree.tag_configure('normal', font=('Helvetica', 10))
 
 tree.pack(expand=True, fill="both")
 
-# === Insertar posiciones en tabla ===
+# Para cerrar Entry activo
+current_edit_entry = None
+
 def insert_positions_by_asset_class():
+    global current_edit_entry
+    if current_edit_entry:
+        current_edit_entry.destroy()
+        current_edit_entry = None
+
     tree.delete(*tree.get_children())
+    titles = {'FOP': "Opciones sobre futuros", 'OPT': "Opciones", 'FUT': "Futuros", 'STK': "Acciones"}
 
-    asset_class_titles = {
-        'FOP': "Opciones sobre futuros",
-        'OPT': "Opciones",
-        'FUT': "Futuros",
-        'STK': "Acciones"
-    }
-
-    for asset_class, title in asset_class_titles.items():
-        tree.insert('', 'end', text=title, values=('', '', '', '', '', '', '', ''), tags=("title",))
+    for asset_class, title in titles.items():
+        tree.insert('', 'end', text=title, values=('', '', '', '', '', '', '', '', ''), tags=("title",))
 
         for _, row in positions[positions['AssetClass'] == asset_class].iterrows():
             include_img = check_on if row["Include"] else check_off
             tree.insert('', 'end',
-                        text='',  # columna #0
-                        image=include_img,
+                        text='', image=include_img,
                         values=(row['Description'], row['Symbol'], row['CurrencyPrimary'],
-                                f"{row['Quantity']:.2f}", f"{row['MarkPrice']:.2f}",
+                                f"{row['Quantity']:.2f}",
+                                f"{row['ModifiedQuantity']:.2f}",
+                                f"{row['MarkPrice']:.2f}",
                                 f"{row['Multiplier']:.2f}" if pd.notna(row['Multiplier']) else '',
                                 f"{row['Beta']:.2f}" if pd.notna(row['Beta']) else '',
                                 f"{row['Delta']:.3f}" if pd.notna(row['Delta']) else ''),
                         tags=("normal",))
 
-# === Función para alternar inclusión ===
 def toggle_include(event):
     item_id = tree.identify_row(event.y)
     col = tree.identify_column(event.x)
@@ -164,28 +124,76 @@ def toggle_include(event):
 
 tree.bind("<Button-1>", toggle_include)
 
-# === Cálculo de exposición ===
-def calculate_exposure():
-    global fx_exchange
-    global positions
+def on_double_click(event):
+    global current_edit_entry
 
-    positions = fill_market_price(positions)
-    positions_to_use = positions[positions["Include"]]
+    if current_edit_entry:
+        current_edit_entry.destroy()
+        current_edit_entry = None
+
+    region = tree.identify("region", event.x, event.y)
+    if region != "cell":
+        return
+
+    row_id = tree.identify_row(event.y)
+    col_id = tree.identify_column(event.x)
+    if not row_id or col_id != "#5":  # ModifiedQuantity
+        return
+
+    x, y, width, height = tree.bbox(row_id, col_id)
+    values = tree.item(row_id, "values")
+    if not values:
+        return
+
+    entry = tk.Entry(tree, justify="center", font=('Helvetica', 10))
+    entry.place(x=x, y=y, width=width, height=height)
+    entry.insert(0, values[4])
+    current_edit_entry = entry
+
+    def save_edit(event=None):
+        nonlocal entry
+        try:
+            new_qty = float(entry.get())
+            description = values[0]
+            idx = positions["Description"] == description
+            if idx.any():
+                positions.loc[idx, "ModifiedQuantity"] = new_qty
+        except ValueError:
+            pass
+        entry.destroy()
+        current_edit_entry = None
+        insert_positions_by_asset_class()
+
+    entry.bind("<Return>", save_edit)
+    entry.bind("<FocusOut>", save_edit)
+    entry.focus()
+
+tree.bind("<Double-1>", on_double_click)
+
+def calculate_exposure():
+    global current_edit_entry
+    if current_edit_entry:
+        current_edit_entry.destroy()
+        current_edit_entry = None
+
+    positions.fillna({"ModifiedQuantity": 0}, inplace=True)
+    positions_to_use = positions[positions["Include"]].copy()
+    positions_to_use["Quantity"] = positions_to_use["ModifiedQuantity"]
 
     individual_exposures, total_exposure = portfolio_exposure(positions_to_use)
 
     data = yf.Ticker("ES=F")
     current_price_fut = data.history(period="1d")["Close"].iloc[-1]
     beta = float(betas[betas["UnderlyingSymbol"] == "ES=F"]["Beta"])
-    fx_exchange_rate = fx_exchange[fx_exchange["CurrencyPrimary"] == "USD"]["FX_Exchange"].values[0]
-    MES_exposure = current_price_fut * fx_exchange_rate * 5 * beta
+    fx_rate = fx_exchange[fx_exchange["CurrencyPrimary"] == "USD"]["FX_Exchange"].values[0]
+    MES_exposure = current_price_fut * fx_rate * 5 * beta
 
-    total_absolute_exposure = individual_exposures["Exposure"].abs().sum()
-    grouped_by_direction = individual_exposures.groupby(by="Direction").sum().reset_index()
-    long_absolute = float(abs(grouped_by_direction[grouped_by_direction.Direction == "Long"]["Exposure"]))
-    short_absolute = float(abs(grouped_by_direction[grouped_by_direction.Direction == "Short"]["Exposure"]))
-    pct_short = 100 * short_absolute / total_absolute_exposure
-    pct_long = 100 * long_absolute / total_absolute_exposure
+    total_abs = individual_exposures["Exposure"].abs().sum()
+    grouped = individual_exposures.groupby("Direction").sum().reset_index()
+    long_abs = float(abs(grouped[grouped.Direction == "Long"]["Exposure"]))
+    short_abs = float(abs(grouped[grouped.Direction == "Short"]["Exposure"]))
+    pct_short = 100 * short_abs / total_abs
+    pct_long = 100 * long_abs / total_abs
 
     results_text.set(f"Total exposure: {total_exposure:,.2f} EUR\n"
                      f"Total exposure in MES: {total_exposure / float(MES_exposure):,.2f} MES\n"
@@ -194,18 +202,13 @@ def calculate_exposure():
 
     insert_positions_by_asset_class()
 
-# === Botón de cálculo ===
 calculate_button = tk.Button(root, text="Calcular", command=calculate_exposure,
                              font=("Helvetica", 12, "bold"), bg="lightblue")
 calculate_button.pack(pady=10)
 
-# === Etiqueta de resultados ===
 results_text = tk.StringVar()
 results_label = tk.Label(root, textvariable=results_text, font=("Helvetica", 12))
 results_label.pack(pady=10)
 
-# Mostrar tabla inicial
 insert_positions_by_asset_class()
-
-# Iniciar GUI
 root.mainloop()
