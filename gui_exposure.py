@@ -29,14 +29,7 @@ positions = positions.merge(fx_exchange, on="CurrencyPrimary", how="left")
 positions["Include"] = True
 positions["ModifiedQuantity"] = positions["Quantity"]
 
-deltas_temp = pd.DataFrame(list({
-    'ALPHABET INC-CL A': None, 'AMAZON.COM INC': None, 'CORE NATURAL RESOURCES INC': None,
-    'CRESUD S.A.-SPONS ADR': None, 'ES 17APR25 5480 P': -0.252, 'ES 17APR25 5670 P': -0.509,
-    'HEINEKEN NV': None, 'HOWARD HUGHES HOLDINGS INC': None, 'INTEL CORP': None,
-    'LVMH MOET HENNESSY LOUIS VUI': None, 'MES 20JUN25': None, 'NOVO-NORDISK A/S-SPONS ADR': None,
-    'PAYPAL HOLDINGS INC': None, 'VET 20JUN25 10 P': -0.887, 'HEIA 04APR25 74 P': -0.337,
-    'SOI 17APR25 57 P': -0.900, 'YPF 17APR25 37 P': -0.618, 'GLNG 17APR25 34 P': -0.215,
-}.items()), columns=['Description', 'Delta'])
+deltas_temp = pd.read_excel("input/deltas.xlsx")
 positions = positions.merge(deltas_temp, on="Description", how="left")
 
 # === GUI ===

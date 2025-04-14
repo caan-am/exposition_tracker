@@ -149,6 +149,7 @@ def get_current_portfolio():
     # Filtrar el DataFrame
     positions = positions[(positions['Expiry'].isna()) | (positions['Expiry'].dt.date >= todays_date)]
     current_positions = pd.concat([positions,trades_today])
+    
     # To-do: quitar las posiciones caducadas, ocurre los viernes
     current_positions = (
     current_positions.groupby(by=["Description"])
@@ -160,6 +161,11 @@ def get_current_portfolio():
             "Quantity": "sum",
             "Multiplier": "first",
             "UnderlyingSymbol":"first",
+            "ListingExchange": "first",
+            "Strike":"first",
+            "Expiry":"first",
+            "UnderlyingSymbol":"first",
+            "Conid": "first",
         }
     )
     .reset_index()
