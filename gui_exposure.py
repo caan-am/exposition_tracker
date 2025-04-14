@@ -73,8 +73,7 @@ tree.tag_configure('normal', font=('Helvetica', 10))
 
 tree.pack(expand=True, fill="both")
 
-# Para cerrar Entry activo
-current_edit_entry = None
+current_edit_entry = None  # Para cerrar Entry activo
 
 def insert_positions_by_asset_class():
     global current_edit_entry
@@ -117,7 +116,7 @@ def toggle_include(event):
 
 tree.bind("<Button-1>", toggle_include)
 
-def on_double_click(event):
+def on_double_click(event):  # MODIFICADO
     global current_edit_entry
 
     if current_edit_entry:
@@ -130,7 +129,7 @@ def on_double_click(event):
 
     row_id = tree.identify_row(event.y)
     col_id = tree.identify_column(event.x)
-    if not row_id or col_id != "#5":  # ModifiedQuantity
+    if not row_id or col_id not in ("#5", "#9"):  # #5 = ModifiedQuantity, #9 = Delta
         return
 
     x, y, width, height = tree.bbox(row_id, col_id)
@@ -140,17 +139,22 @@ def on_double_click(event):
 
     entry = tk.Entry(tree, justify="center", font=('Helvetica', 10))
     entry.place(x=x, y=y, width=width, height=height)
-    entry.insert(0, values[4])
+
+    initial_value = values[4] if col_id == "#5" else values[8]
+    entry.insert(0, initial_value)
     current_edit_entry = entry
 
-    def save_edit(event=None):
+    def save_edit(event=None):  # NUEVO
         nonlocal entry
         try:
-            new_qty = float(entry.get())
+            new_value = float(entry.get())
             description = values[0]
             idx = positions["Description"] == description
             if idx.any():
-                positions.loc[idx, "ModifiedQuantity"] = new_qty
+                if col_id == "#5":
+                    positions.loc[idx, "ModifiedQuantity"] = new_value
+                elif col_id == "#9":
+                    positions.loc[idx, "Delta"] = new_value
         except ValueError:
             pass
         entry.destroy()
